@@ -10,9 +10,8 @@ import type React from "react"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Flowers&Saints Dashboard",
+  title: "Awetu Dashboard",
   description: "A modern, responsive financial dashboard",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({

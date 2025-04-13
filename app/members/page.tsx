@@ -29,12 +29,12 @@ export default function MembersPage() {
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
             <Suspense fallback={<div className="h-[120px] rounded-lg bg-muted" />}>
               <MemberStats />
             </Suspense>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
             <Suspense
               fallback={<div className="h-[400px] rounded-lg bg-muted lg:col-span-4" />}
               className="lg:col-span-4"
@@ -48,7 +48,7 @@ export default function MembersPage() {
               <MemberDistribution />
             </Suspense>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
             <Suspense
               fallback={<div className="h-[400px] rounded-lg bg-muted lg:col-span-4" />}
               className="lg:col-span-4"

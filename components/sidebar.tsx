@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import Image from "next/image"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -94,7 +95,12 @@ export function Sidebar() {
             <div className={cn("flex h-16 items-center gap-2 px-4", isCollapsed && "justify-center px-2")}>
               {!isCollapsed && (
                 <Link href="/" className="flex items-center font-semibold">
-                  <span className="text-lg">Flowers&Saints</span>
+                  <Image
+                    src="/1.png"
+                    alt="Awetu Logo"
+                    width={200}
+                    height={300}
+                  />
                 </Link>
               )}
               <Button

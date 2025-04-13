@@ -69,7 +69,7 @@ export default function InvoicesPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="list">All Invoices</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          {/* <TabsTrigger value="calendar">Calendar</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -87,7 +87,7 @@ export default function InvoicesPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="calendar" className="space-y-4">
+        {/* <TabsContent value="calendar" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Invoice Calendar</CardTitle>
@@ -96,7 +96,7 @@ export default function InvoicesPage() {
               <InvoiceCalendar searchTerm={searchTerm} filterStatus={filterStatus} />
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
 
       <CreateInvoice open={showCreateInvoice} onOpenChange={setShowCreateInvoice} />

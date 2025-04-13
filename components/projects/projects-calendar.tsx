@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-import { Clock } from "lucide-react"
+import { Clock, Plus, CalendarIcon, CheckCircle2, AlertCircle, ArrowRight, CalendarDays } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const projectsData = [
   {
@@ -18,8 +19,8 @@ const projectsData = [
     progress: 75,
     status: "In Progress",
     priority: "High",
-    startDate: new Date(2023, 10, 1), // Nov 1, 2023
-    dueDate: new Date(2023, 10, 15), // Nov 15, 2023
+    startDate: new Date(2025, 4, 1),
+    dueDate: new Date(2025, 6, 15),
     assignedTo: {
       name: "Alice Johnson",
       avatar:
@@ -45,8 +46,8 @@ const projectsData = [
     progress: 45,
     status: "In Progress",
     priority: "Medium",
-    startDate: new Date(2023, 10, 10), // Nov 10, 2023
-    dueDate: new Date(2023, 11, 20), // Dec 20, 2023
+    startDate: new Date(2023, 10, 10),
+    dueDate: new Date(2023, 11, 20),
     assignedTo: {
       name: "Bob Smith",
       avatar:
@@ -71,8 +72,8 @@ const projectsData = [
     progress: 90,
     status: "Almost Complete",
     priority: "High",
-    startDate: new Date(2023, 9, 15), // Oct 15, 2023
-    dueDate: new Date(2023, 10, 5), // Nov 5, 2023
+    startDate: new Date(2023, 9, 15),
+    dueDate: new Date(2023, 10, 5),
     assignedTo: {
       name: "Charlie Brown",
       avatar: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/dd.jpg-4MCwPC2Bec6Ume26Yo1kao3CnONxDg.jpeg",
@@ -97,8 +98,8 @@ const projectsData = [
     progress: 30,
     status: "In Progress",
     priority: "Critical",
-    startDate: new Date(2023, 11, 1), // Dec 1, 2023
-    dueDate: new Date(2024, 0, 15), // Jan 15, 2024
+    startDate: new Date(2023, 11, 1),
+    dueDate: new Date(2024, 0, 15),
     assignedTo: {
       name: "Diana Martinez",
       avatar: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/9334178.jpg-Y74tW6XFO68g7N36SE5MSNDNVKLQ08.jpeg",
@@ -120,6 +121,7 @@ const projectsData = [
 export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
   const [date, setDate] = useState(new Date())
   const [selectedProject, setSelectedProject] = useState(null)
+  const [activeTab, setActiveTab] = useState("daily")
 
   const filteredProjects = projectsData.filter(
     (project) =>
@@ -140,6 +142,21 @@ export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Completed":
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />
+      case "In Progress":
+        return <Clock className="h-4 w-4 text-blue-500" />
+      case "Almost Complete":
+        return <CheckCircle2 className="h-4 w-4 text-purple-500" />
+      case "At Risk":
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />
     }
   }
 
@@ -178,88 +195,179 @@ export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
     })
   }
 
-  // Custom day render function
-  const renderDay = (day, selectedDay, isDisabled) => {
-    if (!day) return null
+  // Function to get projects for the current month
+  const getProjectsForMonth = (date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
 
-    const hasProjectsToday = hasProjects(day)
+    return filteredProjects.filter((project) => {
+      const projectStartDate = new Date(project.startDate)
+      const projectDueDate = new Date(project.dueDate)
+
+      return (
+        (projectStartDate >= firstDay && projectStartDate <= lastDay) ||
+        (projectDueDate >= firstDay && projectDueDate <= lastDay) ||
+        (projectStartDate <= firstDay && projectDueDate >= lastDay)
+      )
+    })
+  }
+
+  // Function to get upcoming projects
+  const getUpcomingProjects = () => {
+    const today = new Date()
+    return filteredProjects
+      .filter((project) => {
+        const projectStartDate = new Date(project.startDate)
+        return projectStartDate > today
+      })
+      .sort((a, b) => a.startDate - b.startDate)
+      .slice(0, 3)
+  }
+
+  // Render daily projects content
+  const renderDailyContent = () => {
+    const projectsForDay = getProjectsForDate(date)
+
+    if (projectsForDay.length === 0) {
+      return (
+        <EmptyProjectsState
+          title="No projects for this day"
+          description="There are no projects scheduled for this date. View monthly projects or create a new one."
+          icon={<CalendarDays className="h-12 w-12 text-muted-foreground/50" />}
+          upcomingProjects={getUpcomingProjects()}
+          onProjectClick={setSelectedProject}
+          getStatusColor={getStatusColor}
+          getStatusIcon={getStatusIcon}
+        />
+      )
+    }
 
     return (
-      <div
-        className={`relative p-0 w-full h-full flex items-center justify-center ${hasProjectsToday ? "font-bold" : ""}`}
-      >
-        {day.getDate()}
-        {hasProjectsToday && <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full"></div>}
+      <div className="space-y-4">
+        {projectsForDay.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onClick={() => setSelectedProject(project)}
+            getStatusColor={getStatusColor}
+            getStatusIcon={getStatusIcon}
+            getPriorityColor={getPriorityColor}
+          />
+        ))}
       </div>
     )
   }
 
-  // Handle day click
-  const handleDayClick = (day) => {
-    const projectsForDay = getProjectsForDate(day)
-    if (projectsForDay.length > 0) {
-      setSelectedProject(projectsForDay[0])
+  // Render monthly projects content
+  const renderMonthlyContent = () => {
+    const projectsForMonth = getProjectsForMonth(date)
+
+    if (projectsForMonth.length === 0) {
+      return (
+        <EmptyProjectsState
+          title="No projects this month"
+          description="There are no projects scheduled for this month. Try selecting a different month or create a new project."
+          icon={<CalendarIcon className="h-12 w-12 text-muted-foreground/50" />}
+          upcomingProjects={getUpcomingProjects()}
+          onProjectClick={setSelectedProject}
+          getStatusColor={getStatusColor}
+          getStatusIcon={getStatusIcon}
+        />
+      )
     }
+
+    return (
+      <div className="space-y-4">
+        {projectsForMonth.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onClick={() => setSelectedProject(project)}
+            getStatusColor={getStatusColor}
+            getStatusIcon={getStatusIcon}
+            getPriorityColor={getPriorityColor}
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="md:w-1/2">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(newDate) => {
-              if (newDate) {
-                setDate(newDate)
-                handleDayClick(newDate)
-              }
-            }}
-            className="rounded-md border"
-            components={{
-              Day: renderDay,
-            }}
-          />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Calendar</CardTitle>
+              <CardDescription>Select a date to view scheduled projects</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(newDate) => {
+                  if (newDate) {
+                    setDate(newDate)
+                    setActiveTab("daily")
+                    if (hasProjects(newDate)) {
+                      const projectsForDay = getProjectsForDate(newDate)
+                      if (projectsForDay.length > 0) {
+                        setSelectedProject(projectsForDay[0])
+                      }
+                    }
+                  }
+                }}
+                className="rounded-md"
+                components={{
+                  DayContent: (props) => {
+                    // Get the date from props
+                    const day = props.date
+                    // Check if this day has projects
+                    const dayHasProjects = hasProjects(day)
+
+                    return (
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        {day.getDate()}
+                        {dayHasProjects && <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full"></div>}
+                      </div>
+                    )
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
         </div>
         <div className="md:w-1/2">
-          <h3 className="text-lg font-medium mb-4">
-            Projects for {date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-          </h3>
-          <div className="space-y-4">
-            {getProjectsForDate(date).length === 0 ? (
-              <p className="text-muted-foreground">No projects scheduled for this date.</p>
-            ) : (
-              getProjectsForDate(date).map((project) => (
-                <Card
-                  key={project.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => setSelectedProject(project)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{project.name}</h4>
-                      <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{project.description}</p>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>Due: {project.dueDate.toLocaleDateString()}</span>
-                      </div>
-                      <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
-                    </div>
-                    <div className="mt-2">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Progress</span>
-                        <span>{project.progress}%</span>
-                      </div>
-                      <Progress value={project.progress} className="h-1.5" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Projects</CardTitle>
+                  <CardDescription>
+                    {activeTab === "daily"
+                      ? `For ${date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+                      : `For ${date.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`}
+                  </CardDescription>
+                </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[200px]">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="daily">Daily</TabsTrigger>
+                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </CardHeader>
+            <CardContent className="h-[calc(100%-130px)] overflow-auto">
+              {activeTab === "daily" ? renderDailyContent() : renderMonthlyContent()}
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <Button className="w-full" onClick={() => {}}>
+                <Plus className="mr-2 h-4 w-4" /> Create New Project
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
 
@@ -299,7 +407,10 @@ export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
                 <p className="text-sm font-medium mb-2">Project Lead</p>
                 <div className="flex items-center gap-2">
                   <Avatar>
-                    <AvatarImage src={selectedProject.assignedTo.avatar} alt={selectedProject.assignedTo.name} />
+                    <AvatarImage
+                      src={selectedProject.assignedTo.avatar || "/placeholder.svg"}
+                      alt={selectedProject.assignedTo.name}
+                    />
                     <AvatarFallback>{selectedProject.assignedTo.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span>{selectedProject.assignedTo.name}</span>
@@ -311,7 +422,7 @@ export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
                 <div className="flex items-center gap-2">
                   {selectedProject.team.map((member, index) => (
                     <Avatar key={index}>
-                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                       <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                   ))}
@@ -328,3 +439,91 @@ export function ProjectsCalendar({ searchTerm = "", filterStatus = "all" }) {
   )
 }
 
+function EmptyProjectsState({
+  title,
+  description,
+  icon,
+  upcomingProjects,
+  onProjectClick,
+  getStatusColor,
+  getStatusIcon,
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <div className="mb-4 rounded-full bg-muted p-3">{icon}</div>
+      <h3 className="mb-1 text-lg font-medium">{title}</h3>
+      <p className="mb-6 text-sm text-muted-foreground max-w-md">{description}</p>
+
+      {upcomingProjects.length > 0 && (
+        <div className="w-full">
+          <h4 className="text-sm font-medium mb-3 text-left">Upcoming Projects</h4>
+          <div className="space-y-3">
+            {upcomingProjects.map((project) => (
+              <div
+                key={project.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => onProjectClick(project)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">{getStatusIcon(project.status)}</div>
+                  <div>
+                    <h5 className="font-medium text-sm">{project.name}</h5>
+                    <p className="text-xs text-muted-foreground">Starts: {project.startDate.toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectCard({ project, onClick, getStatusColor, getStatusIcon, getPriorityColor }) {
+  return (
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={onClick}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex-shrink-0">{getStatusIcon(project.status)}</div>
+          <div className="flex-1">
+            <h4 className="font-medium">{project.name}</h4>
+          </div>
+          <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
+        <div className="flex items-center justify-between text-sm mb-3">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span>Due: {project.dueDate.toLocaleDateString()}</span>
+          </div>
+          <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+        </div>
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span>Progress</span>
+            <span>{project.progress}%</span>
+          </div>
+          <Progress value={project.progress} className="h-1.5" />
+        </div>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex -space-x-2">
+            {project.team.slice(0, 3).map((member, index) => (
+              <Avatar key={index} className="h-6 w-6 border-2 border-background">
+                <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
+                <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+            ))}
+            {project.team.length > 3 && (
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted border-2 border-background text-xs">
+                +{project.team.length - 3}
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground">Lead: {project.assignedTo.name}</div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
